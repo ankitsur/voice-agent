@@ -2,26 +2,64 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { listCalls } from "../api/calls";
+import { listCalls, bulkDeleteCalls } from "../api/calls";
+import ConfirmModal from "../components/ConfirmModal";
 import type { Call, CallStatus } from "../types";
 
 export default function CallResults() {
   const navigate = useNavigate();
   const [calls, setCalls] = useState<Call[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  const loadCalls = useCallback(async () => {
+    try {
+      const res = await listCalls();
+      setCalls(res.data || []);
+    } catch {
+      toast.error("Failed to load calls.");
+    }
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
-    async function load() {
-      try {
-        const res = await listCalls();
-        setCalls(res.data || []);
-      } catch (error) {
-        toast.error("Failed to load calls.");
-      }
-      setLoading(false);
+    loadCalls();
+  }, [loadCalls]);
+
+  const toggleSelect = (id: string) => {
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selected.length === calls.length) {
+      setSelected([]);
+    } else {
+      setSelected(calls.map((c) => c.id));
     }
-    load();
-  }, []);
+  };
+
+  const handleDeleteClick = () => {
+    if (selected.length === 0) return;
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setDeleting(true);
+    try {
+      await bulkDeleteCalls(selected);
+      toast.success(`Deleted ${selected.length} call(s)`);
+      setSelected([]);
+      setShowDeleteModal(false);
+      loadCalls();
+    } catch {
+      toast.error("Failed to delete calls");
+    }
+    setDeleting(false);
+  };
 
   const getStatusBadge = (status: CallStatus) => {
     const styles: Record<CallStatus, string> = {
@@ -39,12 +77,54 @@ export default function CallResults() {
 
   return (
     <div className="ml-64 mt-16 p-10">
-      <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-        Call Results
-      </h1>
-      <p className="text-gray-600 dark:text-slate-400 mt-2 text-lg">
-        View all calls with their transcripts and structured summaries.
-      </p>
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        title="Delete Call Records"
+        message={
+          selected.length === 1
+            ? "Are you sure you want to delete this call record? This action cannot be undone."
+            : `Are you sure you want to delete ${selected.length} call records? This action cannot be undone.`
+        }
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmStyle="danger"
+        isLoading={deleting}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setShowDeleteModal(false)}
+      />
+
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            Call Results
+          </h1>
+          <p className="text-gray-600 dark:text-slate-400 mt-2">
+            View all calls with their transcripts and structured summaries.
+          </p>
+        </div>
+      </div>
+
+      {/* Selection Actions Bar */}
+      {selected.length > 0 && (
+        <div className="mt-6 p-4 bg-gray-100 dark:bg-slate-700 rounded-lg flex items-center gap-4">
+          <span className="text-gray-700 dark:text-slate-200 font-medium">
+            {selected.length} selected
+          </span>
+          <button
+            onClick={handleDeleteClick}
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
+          >
+            Delete Selected
+          </button>
+          <button
+            onClick={() => setSelected([])}
+            className="px-4 py-2 bg-gray-300 dark:bg-slate-600 hover:bg-gray-400 dark:hover:bg-slate-500 text-gray-700 dark:text-slate-200 rounded-lg text-sm font-medium transition-colors"
+          >
+            Clear Selection
+          </button>
+        </div>
+      )}
 
       {loading ? (
         <div className="mt-10 text-gray-600 dark:text-slate-400">Loading calls...</div>
@@ -62,10 +142,18 @@ export default function CallResults() {
           </p>
         </div>
       ) : (
-        <div className="mt-10 overflow-x-auto">
+        <div className="mt-6 overflow-x-auto">
           <table className="min-w-full bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
             <thead className="bg-gray-100 dark:bg-slate-700">
               <tr>
+                <th className="px-4 py-4 w-12">
+                  <input
+                    type="checkbox"
+                    checked={selected.length === calls.length && calls.length > 0}
+                    onChange={toggleSelectAll}
+                    className="w-4 h-4 cursor-pointer"
+                  />
+                </th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 dark:text-slate-200">
                   Driver
                 </th>
@@ -87,8 +175,19 @@ export default function CallResults() {
               {calls.map((call) => (
                 <tr
                   key={call.id}
-                  className="hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+                  className={`hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors ${
+                    selected.includes(call.id) ? "bg-blue-50 dark:bg-blue-900/20" : ""
+                  }`}
                 >
+                  <td className="px-4 py-4">
+                    <input
+                      type="checkbox"
+                      checked={selected.includes(call.id)}
+                      onChange={() => toggleSelect(call.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-4 h-4 cursor-pointer"
+                    />
+                  </td>
                   <td className="px-6 py-4">
                     <div className="text-gray-900 dark:text-white font-medium">
                       {call.driver_name}
@@ -125,4 +224,3 @@ export default function CallResults() {
     </div>
   );
 }
-

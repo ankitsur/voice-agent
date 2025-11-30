@@ -14,5 +14,19 @@ export async function getCall(callId: string): Promise<ApiResponse<Call>> {
   return res.data;
 }
 
+// Delete a single call
+export async function deleteCall(callId: string): Promise<{ success: boolean; deleted_id: string }> {
+  const res = await api.delete<{ success: boolean; deleted_id: string }>(`/calls/${callId}`);
+  return res.data;
+}
+
+// Delete multiple calls
+export async function bulkDeleteCalls(ids: string[]): Promise<{ success: boolean; deleted_count: number }> {
+  const res = await api.delete<{ success: boolean; deleted_count: number }>("/calls", {
+    data: ids,
+  });
+  return res.data;
+}
+
 // Re-export types for convenience
 export type { Call };
