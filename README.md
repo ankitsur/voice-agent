@@ -338,12 +338,3 @@ voiceagent/
 3. Answer safety/injury/location questions
 4. View emergency-specific structured data
 
----
-
-## 📝 License
-
-MIT
-
----
-
-Built with ❤️ using AI-assisted development
