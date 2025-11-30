@@ -7,7 +7,6 @@ A web application for configuring, testing, and reviewing AI voice agent calls f
 - **Agent Configuration UI** - Define prompts, voice settings, emergency logic, and edge case handling
 - **Call Triggering** - Enter driver details and start test web calls via Retell AI
 - **Call Results** - View structured data summaries and full transcripts after calls complete
-- **Pre-built Scenarios** - Ready-to-use configurations for logistics dispatch
 
 ## 🏗️ Tech Stack
 
@@ -107,12 +106,6 @@ CREATE TABLE calls (
 3. Set the webhook URL to your backend endpoint: `https://your-url/webhooks/retell`
 4. Copy the Agent ID and API Key to your `.env` file
 
-### 6. Seed Pre-configured Agents
-
-```bash
-curl -X POST http://127.0.0.1:8000/api/v1/seed/agent-configs
-```
-
 ## 📱 Usage
 
 1. **Open the Dashboard**: http://localhost:5173
@@ -160,8 +153,7 @@ voiceagent/
 │   │   ├── agent_configs.py  # CRUD for agent configs
 │   │   ├── calls.py          # List/get calls
 │   │   ├── start_call.py     # Initiate Retell calls
-│   │   ├── webhook.py        # Retell webhook handler
-│   │   └── seed.py           # Seed pre-configured agents
+│   │   └── webhook.py        # Retell webhook handler
 │   ├── services/
 │   │   └── postprocess.py    # Transcript analysis
 │   ├── main.py               # FastAPI app
@@ -191,7 +183,6 @@ All API endpoints (except webhooks) are prefixed with `/api/v1`.
 | GET | `/api/v1/calls` | List all calls |
 | GET | `/api/v1/calls/{id}` | Get call with transcript |
 | POST | `/webhooks/retell` | Retell webhook (no prefix) |
-| POST | `/api/v1/seed/agent-configs` | Seed default configs |
 
 ## 🎨 Design Choices
 

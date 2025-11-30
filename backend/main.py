@@ -12,7 +12,6 @@ from api.agent_configs import router as agent_router
 from api.start_call import router as start_call_router
 from api.webhook import router as webhook_router
 from api.calls import router as calls_router
-from api.seed import router as seed_router
 
 app = FastAPI(
     title="AI Voice Agent API",
@@ -33,7 +32,6 @@ app.add_middleware(
 app.include_router(agent_router)
 app.include_router(start_call_router)
 app.include_router(calls_router)
-app.include_router(seed_router)
 
 # Webhook router (no /api/v1 prefix - external service callback)
 app.include_router(webhook_router)

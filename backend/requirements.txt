@@ -2,7 +2,7 @@
 # Install with: pip install -r requirements.txt
 
 fastapi>=0.100.0
-uvicorn[standard]>=0.23.0
+uvicorn
 python-dotenv>=1.0.0
 supabase>=2.0.0
 httpx>=0.24.0

@@ -5,29 +5,29 @@ export default function Home() {
   const navigate = useNavigate();
 
   return (
-    <div className=" ml-64  flex flex-col w-full h-full p-10">
+    <div className="ml-64 mt-16 p-10 pr-10 max-w-[calc(100vw-16rem)]">
       {/* Title */}
-      <h1 className="text-4xl font-bold text-gray-800 dark:text-white">
-        Welcome to the Customizable AI Voice Agent Dashboard
+      <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
+        AI Voice Agent Dashboard
       </h1>
 
       <p className="text-gray-600 dark:text-gray-300 mt-3 text-lg">
-        Configure your AI agent, run test calls, and review structured call outcomes — all in one place.
+        Configure your AI agent, run test calls, and review structured call outcomes.
       </p>
 
       {/* Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
-
+      <div className="grid grid-cols-3 gap-6 mt-10">
         <div
-          onClick={() => navigate("/agent-configs/new")}
+          onClick={() => navigate("/agent-configs")}
           className="p-6 bg-white dark:bg-gray-800 shadow-lg rounded-xl border border-gray-200 
           dark:border-gray-700 hover:shadow-xl hover:scale-[1.02] transition cursor-pointer"
         >
+          <div className="text-3xl mb-3">⚙️</div>
           <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
             Configure Agent
           </h2>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Define prompts, voice settings, and logic for your agent.
+          <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm">
+            Define prompts, emergency triggers, and extraction rules.
           </p>
         </div>
 
@@ -36,11 +36,12 @@ export default function Home() {
           className="p-6 bg-white dark:bg-gray-800 shadow-lg rounded-xl border border-gray-200 
           dark:border-gray-700 hover:shadow-xl hover:scale-[1.02] transition cursor-pointer"
         >
+          <div className="text-3xl mb-3">📞</div>
           <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
             Start Call
           </h2>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Enter driver details and simulate a real AI phone call.
+          <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm">
+            Enter driver details and start a test web call.
           </p>
         </div>
 
@@ -49,14 +50,14 @@ export default function Home() {
           className="p-6 bg-white dark:bg-gray-800 shadow-lg rounded-xl border border-gray-200 
           dark:border-gray-700 hover:shadow-xl hover:scale-[1.02] transition cursor-pointer"
         >
+          <div className="text-3xl mb-3">📊</div>
           <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
             Call Results
           </h2>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
-            View structured summaries and full transcripts.
+          <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm">
+            View structured summaries and transcripts.
           </p>
         </div>
-
       </div>
     </div>
   );
