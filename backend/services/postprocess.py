@@ -99,7 +99,7 @@ def run_post_processing_from_event(transcript: Optional[str], analysis_obj: Opti
         driver_status = "Unloading"
     elif re.search(r"\b(delay|delayed|traffic|stuck|broken)\b", lower):
         driver_status = "Delayed"
-    elif re.search(r"\b(driv|driving|on the way|on route|in transit)\b"):
+    elif re.search(r"\b(driv|driving|on the way|on route|in transit)\b", lower):
         driver_status = "Driving"
 
     # delay reason

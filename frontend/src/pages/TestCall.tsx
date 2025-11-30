@@ -1,15 +1,12 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { listAgentConfigs } from "../api/agentConfig";
-// import { startCall } from "../api/startCall";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import Retell from "retell-sdk";   // ✅ Correct import
+import { RetellWebClient } from "retell-client-js-sdk";
 import { startCall } from "../api/testCall";
-
-
 
 export default function TestCall() {
   const navigate = useNavigate();
@@ -25,8 +22,9 @@ export default function TestCall() {
   const [loadNumber, setLoadNumber] = useState("");
 
   // Retell call handling
-  const [retellClient, setRetellClient] = useState<any>(null);
+  const retellClientRef = useRef<RetellWebClient | null>(null);
   const [isCalling, setIsCalling] = useState(false);
+  const [isInCall, setIsInCall] = useState(false);
   const [callId, setCallId] = useState("");
 
   // -------------------------------------------
@@ -46,6 +44,17 @@ export default function TestCall() {
   }, []);
 
   // -------------------------------------------
+  // Cleanup on unmount
+  // -------------------------------------------
+  useEffect(() => {
+    return () => {
+      if (retellClientRef.current) {
+        retellClientRef.current.stopCall();
+      }
+    };
+  }, []);
+
+  // -------------------------------------------
   // Start Call Handler
   // -------------------------------------------
   async function handleStartCall() {
@@ -61,7 +70,7 @@ export default function TestCall() {
     setIsCalling(true);
 
     try {
-      // 1. Call backend /start-call
+      // 1. Call backend /start-call to get access token
       const res = await startCall({
         agent_config_id: selectedConfig,
         driver_name: driverName,
@@ -80,45 +89,72 @@ export default function TestCall() {
 
       setCallId(returnedCallId);
 
-      // 2. Initialize Retell Web Call Client
-      const client = new Retell.WebCallClient();   // ✅ Correct class
-      setRetellClient(client);
+      // 2. Initialize Retell Web Client (browser SDK)
+      const client = new RetellWebClient();
+      retellClientRef.current = client;
 
-      toast.success("Starting Web Call...");
-
-      // 3. Start Web Call
-      await client.startCall({
-        accessToken,
-        onAgentMessage: (msg) => console.log("Agent:", msg),
-        onUserMessage: (msg) => console.log("User:", msg),
-
-        onError: (err) => {
-          console.error("Call error:", err);
-          toast.error("Call encountered an error.");
-        },
-
-        onEnd: () => {
-          console.log("Call ended.");
-          toast.success("Call finished.");
-          navigate(`/call-results/${returnedCallId}`);
-        },
+      // 3. Set up event listeners
+      client.on("call_started", () => {
+        console.log("Call started");
+        toast.success("Call connected! Speak now...");
+        setIsInCall(true);
       });
+
+      client.on("call_ended", () => {
+        console.log("Call ended");
+        toast.success("Call finished!");
+        setIsInCall(false);
+        setIsCalling(false);
+        // Navigate to results after a short delay
+        setTimeout(() => {
+          navigate(`/call-results/${returnedCallId}`);
+        }, 1000);
+      });
+
+      client.on("agent_start_talking", () => {
+        console.log("Agent started talking");
+      });
+
+      client.on("agent_stop_talking", () => {
+        console.log("Agent stopped talking");
+      });
+
+      client.on("error", (error) => {
+        console.error("Call error:", error);
+        toast.error(`Call error: ${error.message || "Unknown error"}`);
+        setIsInCall(false);
+        setIsCalling(false);
+      });
+
+      client.on("update", (update) => {
+        // Optional: Handle real-time updates
+        console.log("Update:", update);
+      });
+
+      // 4. Start the web call
+      await client.startCall({
+        accessToken: accessToken,
+      });
+
+      toast.success("Connecting to call...");
 
     } catch (error) {
       console.error(error);
-      toast.error("Call failed to start.");
+      toast.error("Failed to start call. Check console for details.");
+      setIsCalling(false);
+      setIsInCall(false);
     }
-
-    setIsCalling(false);
   }
 
   // -------------------------------------------
-  // Manual End Call Button (optional)
+  // End Call Handler
   // -------------------------------------------
   function handleEndCall() {
-    if (retellClient) {
-      retellClient.stopCall();
-      toast.success("Call ended manually.");
+    if (retellClientRef.current) {
+      retellClientRef.current.stopCall();
+      toast.success("Call ended.");
+      setIsInCall(false);
+      setIsCalling(false);
     }
   }
 
@@ -129,12 +165,22 @@ export default function TestCall() {
     <div className="ml-64 mt-16 p-10">
 
       <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-        Start Call
+        Start Test Call
       </h1>
 
       <p className="text-gray-600 dark:text-slate-400 mt-2 text-lg">
-        Select an agent, enter driver details, and begin a simulated Web Call.
+        Select an agent, enter driver details, and begin a Web Call. You will speak as the driver.
       </p>
+
+      {/* Call Status Banner */}
+      {isInCall && (
+        <div className="mt-6 p-4 bg-green-100 dark:bg-green-900 rounded-xl border border-green-500 flex items-center gap-4">
+          <div className="w-4 h-4 bg-green-500 rounded-full animate-pulse"></div>
+          <span className="text-green-800 dark:text-green-200 font-semibold">
+            🎙️ Call in progress - Speak into your microphone as the driver
+          </span>
+        </div>
+      )}
 
       {/* Agent Config Selector */}
       <section className="mt-10 p-6 bg-white dark:bg-slate-800 rounded-xl border dark:border-slate-700 shadow-lg">
@@ -151,6 +197,7 @@ export default function TestCall() {
             className="mt-4 p-3 w-full rounded-lg bg-gray-50 dark:bg-slate-900 border dark:border-slate-700 dark:text-slate-100"
             value={selectedConfig}
             onChange={(e) => setSelectedConfig(e.target.value)}
+            disabled={isInCall}
           >
             <option value="">Select config...</option>
             {configs.map((c) => (
@@ -180,6 +227,7 @@ export default function TestCall() {
               onChange={(e) => setDriverName(e.target.value)}
               className="mt-2 p-3 w-full rounded-lg bg-gray-50 dark:bg-slate-900 border dark:border-slate-700 dark:text-slate-100"
               placeholder="Example: Mike Johnson"
+              disabled={isInCall}
             />
           </div>
 
@@ -193,6 +241,7 @@ export default function TestCall() {
               onChange={(e) => setDriverPhone(e.target.value)}
               className="mt-2 p-3 w-full rounded-lg bg-gray-50 dark:bg-slate-900 border dark:border-slate-700 dark:text-slate-100"
               placeholder="+1 305 555 1983"
+              disabled={isInCall}
             />
           </div>
 
@@ -206,6 +255,7 @@ export default function TestCall() {
               onChange={(e) => setLoadNumber(e.target.value)}
               className="mt-2 p-3 w-full rounded-lg bg-gray-50 dark:bg-slate-900 border dark:border-slate-700 dark:text-slate-100"
               placeholder="7891-B"
+              disabled={isInCall}
             />
           </div>
 
@@ -214,18 +264,18 @@ export default function TestCall() {
 
       {/* Start & End Buttons */}
       <div className="mt-12 flex gap-4">
-        <button
-          onClick={handleStartCall}
-          disabled={isCalling}
-          className="px-12 py-4 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-lg shadow-xl"
-        >
-          {isCalling ? "Starting Call..." : "Start Call"}
-        </button>
-
-        {retellClient && (
+        {!isInCall ? (
+          <button
+            onClick={handleStartCall}
+            disabled={isCalling}
+            className="px-12 py-4 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-lg shadow-xl transition-colors"
+          >
+            {isCalling ? "Connecting..." : "Start Call"}
+          </button>
+        ) : (
           <button
             onClick={handleEndCall}
-            className="px-12 py-4 rounded-xl bg-red-600 hover:bg-red-700 text-white text-lg shadow-xl"
+            className="px-12 py-4 rounded-xl bg-red-600 hover:bg-red-700 text-white text-lg shadow-xl transition-colors"
           >
             End Call
           </button>
@@ -234,10 +284,23 @@ export default function TestCall() {
 
       {/* Show call_id */}
       {callId && (
-        <p className="mt-6 text-green-500 dark:text-green-300">
-          Call ID: <strong>{callId}</strong>
+        <p className="mt-6 text-gray-600 dark:text-gray-400">
+          Call ID: <code className="bg-gray-200 dark:bg-slate-700 px-2 py-1 rounded">{callId}</code>
         </p>
       )}
+
+      {/* Instructions */}
+      <section className="mt-10 p-6 bg-blue-50 dark:bg-slate-800 rounded-xl border border-blue-200 dark:border-slate-700">
+        <h3 className="font-semibold text-blue-800 dark:text-blue-400">💡 How to Test</h3>
+        <ul className="mt-3 text-gray-700 dark:text-slate-300 space-y-2">
+          <li>1. Select an agent configuration (e.g., "Dispatch Check-in Agent")</li>
+          <li>2. Enter driver details (name, phone, load number)</li>
+          <li>3. Click "Start Call" and allow microphone access when prompted</li>
+          <li>4. <strong>Speak as if you are the driver</strong> responding to dispatch</li>
+          <li>5. When done, click "End Call" or let the agent end the conversation</li>
+          <li>6. View the structured results on the Call Results page</li>
+        </ul>
+      </section>
     </div>
   );
 }

@@ -15,7 +15,7 @@
     "react-dom": "^19.2.0",
     "react-hot-toast": "^2.6.0",
     "react-router-dom": "^6.30.2",
-    "retell-sdk": "^4.61.0"
+    "retell-client-js-sdk": "^2.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

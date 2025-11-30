@@ -73,10 +73,13 @@ async def start_call(body: StartCallInput):
     # --------------------------------------------------------------
     payload = {
         "agent_id": RETELL_AGENT_ID,
-        "web_call": True,
-        "webhook_url": RETELL_WEBHOOK_URL,
         "metadata": {
             "call_id": call_id,
+            "driver_name": body.driver_name,
+            "load_number": body.load_number
+        },
+        # Dynamic variables injected into the agent's prompt
+        "retell_llm_dynamic_variables": {
             "driver_name": body.driver_name,
             "load_number": body.load_number
         }
