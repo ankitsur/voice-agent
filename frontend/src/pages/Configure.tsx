@@ -85,6 +85,7 @@ Keep responses conversational and professional.`
   ]);
   const [newTrigger, setNewTrigger] = useState("");
 
+  
   // Load config in edit mode
   useEffect(() => {
     if (!isEdit || !id) return;
