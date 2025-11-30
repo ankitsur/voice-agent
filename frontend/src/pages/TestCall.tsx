@@ -135,8 +135,6 @@ export default function TestCall() {
         accessToken: accessToken,
       });
 
-      toast.success("Connecting to call...");
-
     } catch (err) {
       console.error("Failed to start call:", err);
       toast.error("Failed to start call. Check console for details.");
