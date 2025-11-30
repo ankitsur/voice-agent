@@ -9,9 +9,7 @@ This application enables non-technical administrators to:
 - **Trigger** test calls with driver details
 - **Review** structured call summaries and full transcripts
 
-## 🎬 Demo
-
-The application supports two main scenarios:
+## 🎬 Demo Scenarios
 
 ### Scenario 1: Driver Check-in
 Standard dispatch check-in collecting status, location, ETA, and POD confirmation.
@@ -101,102 +99,167 @@ CREATE TABLE calls (
 );
 ```
 
-### 4. Configure Retell AI
+### 4. Configure Retell AI Dashboard
 
-1. Create an agent in [Retell Dashboard](https://dashboard.retellai.com)
-2. Set the **First Message**:
-   ```
-   Hi {{driver_name}}, this is Dispatch calling with a check call on load {{load_number}}. How's everything going out there?
-   ```
-3. Set the **Agent Prompt** (see full prompt below)
-4. Enable **Backchanneling** and set **Filler Words** to Medium
-5. Copy the Agent ID to your `.env` file
+In [Retell Dashboard](https://dashboard.retellai.com):
 
-## 📱 Usage
+1. **Create a new agent**
+2. **Set these placeholders** (the actual content comes from your UI):
+   - **Agent Prompt**: `{{custom_prompt}}`
+   - **First Message**: `{{first_message}}`
+3. **Voice Settings** (recommended):
+   - Enable **Backchanneling** (natural "uh-huh" responses)
+   - Set **Filler Words** to Medium
+   - Set **Interruption Sensitivity** to 70-80%
+4. **Copy the Agent ID** to your `.env` file
+5. **Configure Webhook URL**: `https://your-backend-url/webhooks/retell`
 
-1. Open http://localhost:5173
-2. **Configure Agent** → Create/edit agent configurations
-3. **Start Call** → Enter driver details and begin test call
-4. **Call Results** → View structured data and transcripts
+> **Note**: The prompts, first messages, and emergency triggers are all configured from the UI and passed dynamically to Retell AI at call time.
 
-## 🤖 Retell AI Configuration
+---
 
-### Agent Prompt
+## 📱 How to Use the Application
 
-```
-You are an AI dispatch agent named "Dispatch" for a logistics company. You are calling driver {{driver_name}} about load number {{load_number}}.
+### Home Screen
+Navigate between the three main features using the dashboard cards:
+- **Configure Agent** - Setup AI behavior
+- **Start Call** - Begin a test call
+- **Call Results** - Review completed calls
 
-## YOUR PERSONALITY
-- Professional but friendly, like a helpful colleague
-- Keep responses short and conversational (1-2 sentences max)
-- Use natural speech patterns, not robotic
+---
 
-## STANDARD CHECK-IN FLOW
-After greeting, gather the following information naturally:
+### Creating an Agent Configuration
 
-1. DRIVER STATUS - Ask: "What's your current status on that load?"
-2. LOCATION - Ask: "And where are you at right now?"
-3. ETA - If not arrived, ask: "What's your ETA looking like?"
-4. DELAYS - If they mention delay, ask: "What's causing the holdup?"
-5. POD REMINDER - If arrived/unloading, say: "Don't forget to send over that proof of delivery when you're done."
+1. Click **"Configure Agent"** from home or sidebar
+2. Click **"+ Create New Configuration"**
+3. Fill in the fields:
+   - **Agent Name** - e.g., "Dispatch Check-in Agent"
+   - **Description** - Brief description of the agent's purpose
+   - **First Message** - Opening greeting (use `{{driver_name}}` and `{{load_number}}` placeholders)
+   - **Agent Prompt** - Full instructions for the AI's behavior
+   - **Post-Call Summary Prompt** - Instructions for extracting structured data
+   - **Emergency Triggers** - Keywords that activate emergency protocol (add/remove as needed)
+4. Click **"Create Configuration"**
+5. Toast notification confirms success ✅
 
-## EMERGENCY PROTOCOL - HIGHEST PRIORITY
-If the driver mentions: accident, crash, blowout, breakdown, emergency, hurt, injured, medical, fire, stuck, collision, wreck
+---
 
-IMMEDIATELY:
-1. Say: "I'm really sorry to hear that. Let me get some information so we can help you right away."
-2. Ask: "Can you tell me what happened? Was it an accident, a breakdown, or something else?"
-3. Ask: "Is everyone okay? Are you in a safe location right now?"
-4. Ask: "Are there any injuries I need to know about?"
-5. Ask: "What's your exact location? Highway, mile marker, or nearest exit?"
-6. Ask: "Is the load secure, or is there any damage to the cargo?"
-7. Say: "Okay {{driver_name}}, I've got all that. I'm connecting you to a human dispatcher right now."
+### Viewing/Editing Agent Configurations
 
-## HANDLING DIFFICULT SITUATIONS
+1. Go to **"Agent Configurations"** page
+2. **Select a configuration** by clicking its checkbox
+3. Action buttons appear:
+   - **Edit** - Opens configuration in edit mode (all fields editable)
+   - **View** - Opens configuration in read-only mode (fields disabled)
+   - **Delete** - Removes selected configuration(s)
+4. **Bulk delete**: Select multiple configurations and click Delete
 
-UNCOOPERATIVE DRIVER:
-- First: Rephrase and ask more specifically
-- Second: Be direct but friendly
-- After 3 attempts: "Alright, I'll note that we couldn't get a full update. Drive safe."
+---
 
-NOISY/UNCLEAR AUDIO:
-- First: "Sorry, I didn't quite catch that. Could you say that again?"
-- Second: "Still having trouble hearing you. One more time?"
-- If still unclear: "The connection's rough. I'm going to transfer you to dispatch."
+### Starting a Test Call
 
-GPS/LOCATION CONFLICT:
-- "Just to make sure I have it right - you said you're near [location]? Our system was showing something different, just wanted to double-check."
+1. Click **"Start Call"** from home or sidebar
+2. **Select an agent configuration** from the dropdown
+3. Enter driver details:
+   - **Driver Name** - e.g., "Mike Johnson"
+   - **Driver Phone** - e.g., "+1 305 555 1983"
+   - **Load Number** - e.g., "7891-B"
+4. Click **"Start Call"**
+5. **Allow microphone access** when prompted
+6. **Speak as the driver** responding to dispatch
+7. Green banner shows "Call in progress" with pulsing indicator
+8. Click **"End Call"** when finished
+9. Automatically redirects to Call Results page
+10. Toast notification shows "Call connected!" and "Call finished!" ✅
 
-## ENDING THE CALL
-- Normal: "Alright, thanks for the update {{driver_name}}. Drive safe out there!"
-- Emergency: "Help is on the way. Stay safe."
-```
+---
 
-### Post-Call Analysis Schema
+### Viewing Call Results
 
-Add this to Retell's Post-Call Analysis:
+1. Click **"Call Results"** from home or sidebar
+2. See list of all completed calls with:
+   - Call ID
+   - Driver Name
+   - Status
+   - Date/Time
+3. **Click a call** to view details:
+   - **Structured Data** - Key-value pairs extracted from conversation
+   - **Full Transcript** - Complete conversation history
+4. **Delete calls**:
+   - Select checkbox(es)
+   - Click "Delete Selected"
+   - Confirm in modal dialog
 
-```
-Extract the following from the conversation as JSON:
+---
 
-For NORMAL calls:
-- call_type: "normal"
-- call_outcome: "In-Transit Update" | "Arrival Confirmation" | "Delayed Update"
-- driver_status: "Driving" | "Delayed" | "Arrived" | "Unloading" | "Unknown"
-- current_location: string or null
-- eta: string or null
-- delay_reason: string or "None"
-- pod_reminder_acknowledged: true or false
+## ✨ UI Features
 
-For EMERGENCY calls (if any emergency keyword detected):
-- call_type: "emergency"
-- call_outcome: "Emergency Escalation"
-- emergency_type: "Accident" | "Breakdown" | "Medical" | "Other"
-- safety_status: string or null
-- injury_status: string or null
-- emergency_location: string or null
-- load_secure: true or false or null
-```
+### Home Dashboard
+- Three navigation cards with icons
+- Quick access to all features
+- Clean, responsive layout
+
+### Agent Configurations Page
+- List all existing configurations
+- Create new configuration button
+- Checkbox selection for single/multiple items
+- Action bar with Edit, View, Delete buttons
+- Bulk delete with confirmation modal
+- Toast notifications for all actions
+
+### Configure/Edit Page
+- Agent Identity section (name, description)
+- First Message with placeholder support
+- Agent Prompt textarea
+- Post-Call Summary Prompt
+- Emergency Detection toggle
+- Emergency Triggers with add/remove functionality
+- View-only mode (all fields disabled)
+- Save/Cancel buttons
+
+### Test Call Page
+- Agent configuration dropdown selector
+- Driver details form (name, phone, load number)
+- Start/End Call buttons with loading states
+- Live call status banner with pulsing indicator
+- Microphone integration via browser
+- Auto-redirect to results after call ends
+- Instructions section for guidance
+
+### Call Results Page
+- Table listing all calls
+- Checkbox selection for bulk operations
+- Floating action bar for delete/clear selection
+- Click to view call details
+- Custom confirmation modal for delete
+
+### Call Detail Page
+- Structured Data section with key-value display
+- Full Transcript section
+- Back to list navigation
+
+### Global Features
+- **Toast Notifications** - Success/error messages (top-right)
+- **Confirmation Modals** - Custom dialogs for destructive actions
+- **Dark Mode Support** - Full dark theme
+- **Responsive Design** - Works on all screen sizes
+- **Custom Favicon** - Branded browser tab icon
+
+---
+
+## 🔄 Dynamic Variables
+
+The application passes these variables to Retell AI dynamically:
+
+| Variable | Source | Description |
+|----------|--------|-------------|
+| `{{custom_prompt}}` | Agent Config → Prompt | Full agent instructions |
+| `{{first_message}}` | Agent Config → First Message | Opening greeting |
+| `{{emergency_triggers}}` | Agent Config → Triggers | Comma-separated keywords |
+| `{{driver_name}}` | Test Call Form | Driver's name |
+| `{{load_number}}` | Test Call Form | Load identifier |
+
+---
 
 ## 📁 Project Structure
 
@@ -223,9 +286,9 @@ voiceagent/
 └── README.md
 ```
 
-## 🔗 API Endpoints
+---
 
-All endpoints prefixed with `/api/v1` except webhooks.
+## 🔗 API Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -242,66 +305,31 @@ All endpoints prefixed with `/api/v1` except webhooks.
 | DELETE | `/api/v1/calls` | Bulk delete calls |
 | POST | `/webhooks/retell` | Retell webhook |
 
+---
+
 ## 🎨 Design Choices
 
 1. **Web Calls vs Phone Calls**: Used Retell's web call feature for testing without requiring US phone numbers. The user speaks as the driver through their browser microphone.
 
-2. **Single Agent Architecture**: One Retell agent handles both check-in and emergency scenarios dynamically based on conversation context.
+2. **Dynamic Configuration**: All prompts, first messages, and emergency triggers are configured via UI and passed to Retell at runtime—no code changes needed.
 
-3. **Dual Extraction Strategy**: 
+3. **Single Agent Architecture**: One Retell agent handles both check-in and emergency scenarios dynamically based on conversation context.
+
+4. **Dual Extraction Strategy**: 
    - Primary: Retell's post-call LLM analysis
    - Fallback: Backend regex-based extraction
 
-4. **API Versioning**: All API routes use `/api/v1` prefix for future compatibility.
+5. **Custom Modals**: Replaced browser alerts with custom confirmation dialogs for better UX.
 
-5. **Type Safety**: Full TypeScript on frontend, Pydantic models on backend.
+6. **Type Safety**: Full TypeScript on frontend, Pydantic models on backend.
 
-## 🔧 Voice Configuration
-
-Optimized for realistic conversation:
-
-| Setting | Value | Purpose |
-|---------|-------|---------|
-| Backchanneling | Enabled | Natural "uh-huh", "I see" responses |
-| Filler Words | Medium | Human-like speech patterns |
-| Interruption Sensitivity | 70-80% | Allow natural interruptions |
-
-## ✨ Features
-
-- **Dynamic Agent Configuration**: Define prompts, first messages, post-call summaries, and emergency triggers—all passed dynamically to Retell AI
-- **View/Edit Modes**: Read-only view mode for configurations, separate edit mode
-- **Test Calls**: Browser-based web calls via Retell AI
-- **Structured Results**: Key-value summaries from calls
-- **Full Transcripts**: Complete conversation history
-- **Bulk Operations**: Select and delete multiple records
-- **Dark Mode**: Full dark theme support
-- **Responsive Design**: Works on all screen sizes
-
-## 🔄 Dynamic Variables
-
-The application passes these variables to Retell AI dynamically:
-
-| Variable | Source | Description |
-|----------|--------|-------------|
-| `{{custom_prompt}}` | Agent Config → Prompt | Full agent instructions |
-| `{{first_message}}` | Agent Config → First Message | Opening greeting |
-| `{{emergency_triggers}}` | Agent Config → Triggers | Comma-separated keywords |
-| `{{driver_name}}` | Test Call Form | Driver's name |
-| `{{load_number}}` | Test Call Form | Load identifier |
-
-### Retell Dashboard Setup
-
-Configure your Retell agent to use these placeholders:
-
-1. **Agent Prompt**: `{{custom_prompt}}`
-2. **First Message**: `{{first_message}}`
-3. **Post-Call Analysis**: Configure manually using the schema from your app
+---
 
 ## 🧪 Testing Scenarios
 
 ### Test Normal Check-in:
 1. Start a call
-2. Respond as a driver: "Yeah, I'm on I-10 near Phoenix, should be there around 8 AM"
+2. Respond as a driver: "Yeah, I'm on I-10 near Phoenix, about 2 hours out"
 3. View structured data showing location and ETA
 
 ### Test Emergency:
@@ -309,6 +337,8 @@ Configure your Retell agent to use these placeholders:
 2. Respond: "I just had a blowout on I-15"
 3. Answer safety/injury/location questions
 4. View emergency-specific structured data
+
+---
 
 ## 📝 License
 
