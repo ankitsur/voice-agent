@@ -102,12 +102,20 @@ export default function AgentConfigList() {
           </button>
 
           {selected.length === 1 && (
-            <button
-              onClick={() => navigate(`/agent-configs/${selected[0]}`)}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
-            >
-              Edit
-            </button>
+            <>
+              <button
+                onClick={() => navigate(`/agent-configs/${selected[0]}`)}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => navigate(`/agent-configs/${selected[0]}/view`)}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                View
+              </button>
+            </>
           )}
 
           <button

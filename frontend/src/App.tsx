@@ -24,6 +24,7 @@ export default function App() {
           <Route path="/agent-configs" element={<AgentConfigList />} />
           <Route path="/agent-configs/new" element={<Configure />} />
           <Route path="/agent-configs/:id" element={<Configure />} />
+          <Route path="/agent-configs/:id/view" element={<Configure viewOnly />} />
           <Route path="/test-call" element={<TestCall />} />
           <Route path="/call-results" element={<CallResults />} />
           <Route path="/call-results/:id" element={<CallDetail />} />

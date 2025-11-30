@@ -281,12 +281,6 @@ export default function TestCall() {
         )}
       </div>
 
-      {/* Show call_id */}
-      {callId && (
-        <p className="mt-6 text-gray-600 dark:text-gray-400">
-          Call ID: <code className="bg-gray-200 dark:bg-slate-700 px-2 py-1 rounded">{callId}</code>
-        </p>
-      )}
 
       {/* Instructions */}
       <section className="mt-10 p-6 bg-blue-50 dark:bg-slate-800 rounded-xl border border-blue-200 dark:border-slate-700">

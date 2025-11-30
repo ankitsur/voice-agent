@@ -10,13 +10,19 @@ import {
 
 interface ConfigData {
   prompt?: string;
+  first_message?: string;
+  post_call_summary?: string;
   emergency?: {
     enabled?: boolean;
     triggers?: string[];
   };
 }
 
-export default function Configure() {
+interface ConfigureProps {
+  viewOnly?: boolean;
+}
+
+export default function Configure({ viewOnly = false }: ConfigureProps) {
   const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
   const navigate = useNavigate();
@@ -28,13 +34,14 @@ export default function Configure() {
   const [agentName, setAgentName] = useState("");
   const [agentDescription, setAgentDescription] = useState("");
 
-  // Main Prompt (this is for reference - actual prompt is in Retell dashboard)
+  // First Message (Opening line)
+  const [firstMessage, setFirstMessage] = useState(
+    "Hi {{driver_name}}, this is Dispatch calling with a check call on load {{load_number}}. How's everything going out there?"
+  );
+
+  // Main Prompt
   const [prompt, setPrompt] = useState(
     `You are an AI dispatch agent for a logistics company. Your job is to conduct driver check-in calls.
-
-GREETING:
-- Start with a friendly greeting and introduce yourself as "Dispatch"
-- Reference the driver's name and load number
 
 STANDARD CHECK-IN:
 - Ask for current status (driving, arrived, unloading, delayed)
@@ -46,11 +53,22 @@ POD REMINDER:
 - If driver has arrived or is unloading, remind them to send Proof of Delivery
 
 EMERGENCY DETECTION:
-- If driver mentions accident, breakdown, injury, or emergency, immediately switch to emergency protocol
+- Emergency trigger words: {{emergency_triggers}}
+- If driver mentions ANY of these words, immediately switch to emergency protocol
 - In emergency mode: ask about safety, injuries, location, and whether the load is secure
 - Inform them you're connecting them to a human dispatcher
 
 Keep responses conversational and professional.`
+  );
+
+  // Post-Call Summary Prompt
+  const [postCallSummary, setPostCallSummary] = useState(
+    `Extract the following from the conversation as JSON:
+- call_outcome: "In-Transit Update" | "Arrival Confirmation" | "Emergency Escalation"
+- driver_status: "Driving" | "Delayed" | "Arrived" | "Unloading" | "Unknown"
+- current_location: string or null
+- eta: string or null
+- delay_reason: string or null`
   );
 
   // Emergency Handling
@@ -74,7 +92,8 @@ Keep responses conversational and professional.`
     async function load() {
       setLoading(true);
       try {
-        const res = await getAgentConfig(id);
+        if (!id) throw new Error("No agent id provided");
+        const res = await getAgentConfig(id as string);
         const data = res.data;
 
         setAgentName(data.name);
@@ -82,6 +101,8 @@ Keep responses conversational and professional.`
 
         const c = data.config as ConfigData;
         setPrompt(c.prompt || "");
+        setFirstMessage(c.first_message || "");
+        setPostCallSummary(c.post_call_summary || "");
         setEmergencyEnabled(c.emergency?.enabled ?? true);
         setEmergencyTriggers(c.emergency?.triggers || []);
       } catch {
@@ -107,6 +128,8 @@ Keep responses conversational and professional.`
       description: agentDescription,
       config: {
         prompt,
+        first_message: firstMessage,
+        post_call_summary: postCallSummary,
         emergency: {
           enabled: emergencyEnabled,
           triggers: emergencyTriggers,
@@ -157,10 +180,10 @@ Keep responses conversational and professional.`
     <div className="ml-64 mt-16 p-10 pb-24 max-w-4xl">
       {/* Page Title */}
       <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-        {isEdit ? "Edit Agent Configuration" : "Create Agent Configuration"}
+        {viewOnly ? "View Agent Configuration" : isEdit ? "Edit Agent Configuration" : "Create Agent Configuration"}
       </h1>
       <p className="text-gray-600 dark:text-slate-400 mt-2">
-        Configure the AI agent's behavior for driver check-in calls.
+        {viewOnly ? "Viewing the agent configuration details." : "Configure the AI agent's behavior for driver check-in calls."}
       </p>
 
       {/* Agent Identity */}
@@ -178,7 +201,12 @@ Keep responses conversational and professional.`
               type="text"
               value={agentName}
               onChange={(e) => setAgentName(e.target.value)}
-              className="p-3 w-full rounded-lg bg-gray-50 dark:bg-slate-900 border dark:border-slate-700 text-gray-900 dark:text-slate-100"
+              disabled={viewOnly}
+              className={`p-3 w-full rounded-lg border text-gray-900 dark:text-slate-100 ${
+                viewOnly 
+                  ? "bg-gray-100 dark:bg-slate-800 cursor-not-allowed" 
+                  : "bg-gray-50 dark:bg-slate-900"
+              } dark:border-slate-700`}
               placeholder="e.g., Dispatch Check-in Agent"
             />
           </div>
@@ -191,11 +219,38 @@ Keep responses conversational and professional.`
               type="text"
               value={agentDescription}
               onChange={(e) => setAgentDescription(e.target.value)}
-              className="p-3 w-full rounded-lg bg-gray-50 dark:bg-slate-900 border dark:border-slate-700 text-gray-900 dark:text-slate-100"
+              disabled={viewOnly}
+              className={`p-3 w-full rounded-lg border text-gray-900 dark:text-slate-100 ${
+                viewOnly 
+                  ? "bg-gray-100 dark:bg-slate-800 cursor-not-allowed" 
+                  : "bg-gray-50 dark:bg-slate-900"
+              } dark:border-slate-700`}
               placeholder="Brief description of what this agent does"
             />
           </div>
         </div>
+      </section>
+
+      {/* First Message */}
+      <section className="mt-6 p-6 bg-white dark:bg-slate-800 rounded-xl shadow-lg border dark:border-slate-700">
+        <h2 className="text-lg font-semibold text-blue-700 dark:text-blue-400">
+          First Message
+        </h2>
+        <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
+          The opening line the agent says when the call connects. Use {"{{driver_name}}"} and {"{{load_number}}"} as placeholders.
+        </p>
+
+        <textarea
+          value={firstMessage}
+          onChange={(e) => setFirstMessage(e.target.value)}
+          disabled={viewOnly}
+          className={`mt-4 w-full h-24 p-4 rounded-lg border font-mono text-sm text-gray-900 dark:text-slate-100 ${
+            viewOnly 
+              ? "bg-gray-100 dark:bg-slate-800 cursor-not-allowed" 
+              : "bg-gray-50 dark:bg-slate-900"
+          } dark:border-slate-700`}
+          placeholder="Hi {{driver_name}}, this is Dispatch calling..."
+        />
       </section>
 
       {/* Main Prompt */}
@@ -204,14 +259,41 @@ Keep responses conversational and professional.`
           Agent Prompt
         </h2>
         <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
-          Reference prompt for documentation. Copy this to your Retell AI dashboard.
+          Instructions that guide the agent's conversation behavior.
         </p>
 
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          className="mt-4 w-full h-64 p-4 rounded-lg bg-gray-50 dark:bg-slate-900 border dark:border-slate-700 text-gray-900 dark:text-slate-100 font-mono text-sm"
+          disabled={viewOnly}
+          className={`mt-4 w-full h-64 p-4 rounded-lg border font-mono text-sm text-gray-900 dark:text-slate-100 ${
+            viewOnly 
+              ? "bg-gray-100 dark:bg-slate-800 cursor-not-allowed" 
+              : "bg-gray-50 dark:bg-slate-900"
+          } dark:border-slate-700`}
           placeholder="Enter the agent's instructions..."
+        />
+      </section>
+
+      {/* Post-Call Summary */}
+      <section className="mt-6 p-6 bg-white dark:bg-slate-800 rounded-xl shadow-lg border dark:border-slate-700">
+        <h2 className="text-lg font-semibold text-green-700 dark:text-green-400">
+          Post-Call Summary Prompt
+        </h2>
+        <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
+          Instructions for extracting structured data after the call ends. Copy this to Retell AI's Post-Call Analysis.
+        </p>
+
+        <textarea
+          value={postCallSummary}
+          onChange={(e) => setPostCallSummary(e.target.value)}
+          disabled={viewOnly}
+          className={`mt-4 w-full h-40 p-4 rounded-lg border font-mono text-sm text-gray-900 dark:text-slate-100 ${
+            viewOnly 
+              ? "bg-gray-100 dark:bg-slate-800 cursor-not-allowed" 
+              : "bg-gray-50 dark:bg-slate-900"
+          } dark:border-slate-700`}
+          placeholder="Extract the following from the conversation..."
         />
       </section>
 
@@ -221,12 +303,13 @@ Keep responses conversational and professional.`
           <h2 className="text-lg font-semibold text-blue-700 dark:text-blue-400">
             Emergency Detection
           </h2>
-          <label className="flex items-center gap-2 cursor-pointer">
+          <label className={`flex items-center gap-2 ${viewOnly ? "" : "cursor-pointer"}`}>
             <input
               type="checkbox"
               checked={emergencyEnabled}
-              onChange={() => setEmergencyEnabled(!emergencyEnabled)}
-              className="w-5 h-5"
+              onChange={() => !viewOnly && setEmergencyEnabled(!emergencyEnabled)}
+              disabled={viewOnly}
+              className={`w-5 h-5 ${viewOnly ? "cursor-not-allowed" : ""}`}
             />
             <span className="text-gray-700 dark:text-slate-300">Enabled</span>
           </label>
@@ -238,21 +321,23 @@ Keep responses conversational and professional.`
               When these phrases are detected, the agent will switch to emergency protocol.
             </p>
 
-            <div className="flex gap-2 mt-4">
-              <input
-                value={newTrigger}
-                onChange={(e) => setNewTrigger(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && addTrigger()}
-                placeholder="Add trigger phrase..."
-                className="flex-1 p-3 rounded-lg bg-gray-50 dark:bg-slate-900 border dark:border-slate-700 text-gray-900 dark:text-slate-100"
-              />
-              <button
-                onClick={addTrigger}
-                className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium"
-              >
-                Add
-              </button>
-            </div>
+            {!viewOnly && (
+              <div className="flex gap-2 mt-4">
+                <input
+                  value={newTrigger}
+                  onChange={(e) => setNewTrigger(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && addTrigger()}
+                  placeholder="Add trigger phrase..."
+                  className="flex-1 p-3 rounded-lg bg-gray-50 dark:bg-slate-900 border dark:border-slate-700 text-gray-900 dark:text-slate-100"
+                />
+                <button
+                  onClick={addTrigger}
+                  className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium"
+                >
+                  Add
+                </button>
+              </div>
+            )}
 
             <div className="flex flex-wrap gap-2 mt-4">
               {emergencyTriggers.map((trigger) => (
@@ -261,12 +346,14 @@ Keep responses conversational and professional.`
                   className="px-3 py-1.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 text-sm flex items-center gap-2"
                 >
                   {trigger}
-                  <button
-                    onClick={() => removeTrigger(trigger)}
-                    className="hover:text-red-900 dark:hover:text-red-100"
-                  >
-                    ×
-                  </button>
+                  {!viewOnly && (
+                    <button
+                      onClick={() => removeTrigger(trigger)}
+                      className="hover:text-red-900 dark:hover:text-red-100"
+                    >
+                      ×
+                    </button>
+                  )}
                 </span>
               ))}
             </div>
@@ -274,22 +361,40 @@ Keep responses conversational and professional.`
         )}
       </section>
 
-      {/* Save Button */}
+      {/* Action Buttons */}
       <div className="mt-8 flex gap-4">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium shadow-lg transition-colors"
-        >
-          {saving ? "Saving..." : isEdit ? "Save Changes" : "Create Configuration"}
-        </button>
-
-        <button
-          onClick={() => navigate("/agent-configs")}
-          className="px-8 py-3 rounded-xl bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-200 font-medium transition-colors"
-        >
-          Cancel
-        </button>
+        {viewOnly ? (
+          <>
+            <button
+              onClick={() => navigate(`/agent-configs/${id}`)}
+              className="px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-lg transition-colors"
+            >
+              Edit Configuration
+            </button>
+            <button
+              onClick={() => navigate("/agent-configs")}
+              className="px-8 py-3 rounded-xl bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-200 font-medium transition-colors"
+            >
+              Back to List
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium shadow-lg transition-colors"
+            >
+              {saving ? "Saving..." : isEdit ? "Save Changes" : "Create Configuration"}
+            </button>
+            <button
+              onClick={() => navigate("/agent-configs")}
+              className="px-8 py-3 rounded-xl bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-200 font-medium transition-colors"
+            >
+              Cancel
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

@@ -268,13 +268,34 @@ Optimized for realistic conversation:
 
 ## ✨ Features
 
-- **Agent Configuration**: Define prompts, emergency triggers
+- **Dynamic Agent Configuration**: Define prompts, first messages, post-call summaries, and emergency triggers—all passed dynamically to Retell AI
+- **View/Edit Modes**: Read-only view mode for configurations, separate edit mode
 - **Test Calls**: Browser-based web calls via Retell AI
 - **Structured Results**: Key-value summaries from calls
 - **Full Transcripts**: Complete conversation history
 - **Bulk Operations**: Select and delete multiple records
 - **Dark Mode**: Full dark theme support
 - **Responsive Design**: Works on all screen sizes
+
+## 🔄 Dynamic Variables
+
+The application passes these variables to Retell AI dynamically:
+
+| Variable | Source | Description |
+|----------|--------|-------------|
+| `{{custom_prompt}}` | Agent Config → Prompt | Full agent instructions |
+| `{{first_message}}` | Agent Config → First Message | Opening greeting |
+| `{{emergency_triggers}}` | Agent Config → Triggers | Comma-separated keywords |
+| `{{driver_name}}` | Test Call Form | Driver's name |
+| `{{load_number}}` | Test Call Form | Load identifier |
+
+### Retell Dashboard Setup
+
+Configure your Retell agent to use these placeholders:
+
+1. **Agent Prompt**: `{{custom_prompt}}`
+2. **First Message**: `{{first_message}}`
+3. **Post-Call Analysis**: Configure manually using the schema from your app
 
 ## 🧪 Testing Scenarios
 
