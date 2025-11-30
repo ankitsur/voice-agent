@@ -6,7 +6,7 @@ Seed endpoint to create pre-configured agent configs for the two logistics scena
 from fastapi import APIRouter
 from supabase_client import supabase
 
-router = APIRouter()
+router = APIRouter(prefix="/api/v1", tags=["Seed Data"])
 
 # ============================================================
 # SCENARIO 1: End-to-End Driver Check-in ("Dispatch")

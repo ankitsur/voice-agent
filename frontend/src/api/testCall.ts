@@ -1,12 +1,22 @@
+// src/api/testCall.ts
 import { api } from "./client";
 
-export async function startCall(payload: {
+export interface StartCallPayload {
   agent_config_id: string;
   driver_name: string;
   driver_phone: string;
   load_number: string;
-}) {
-  const res = await api.post("/start-call", payload);
-  return res.data;
 }
 
+export interface StartCallResponse {
+  success: boolean;
+  call_id: string;
+  retell_call_id: string;
+  access_token: string;
+  access_token_expires_in?: number;
+}
+
+export async function startCall(payload: StartCallPayload): Promise<StartCallResponse> {
+  const res = await api.post<StartCallResponse>("/start-call", payload);
+  return res.data;
+}

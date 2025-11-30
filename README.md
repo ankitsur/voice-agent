@@ -42,7 +42,7 @@ python3 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
-pip install fastapi uvicorn supabase python-dotenv httpx
+pip install -r requirements.txt
 
 # Create .env file with your credentials
 cat > .env << EOF
@@ -110,7 +110,7 @@ CREATE TABLE calls (
 ### 6. Seed Pre-configured Agents
 
 ```bash
-curl -X POST http://127.0.0.1:8000/seed/agent-configs
+curl -X POST http://127.0.0.1:8000/api/v1/seed/agent-configs
 ```
 
 ## 📱 Usage
@@ -178,18 +178,20 @@ voiceagent/
 
 ## 🔗 API Endpoints
 
+All API endpoints (except webhooks) are prefixed with `/api/v1`.
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/agent-configs` | List all agent configs |
-| POST | `/agent-configs` | Create agent config |
-| GET | `/agent-configs/{id}` | Get single config |
-| PUT | `/agent-configs/{id}` | Update config |
-| DELETE | `/agent-configs/{id}` | Delete config |
-| POST | `/start-call` | Initiate a web call |
-| GET | `/calls` | List all calls |
-| GET | `/calls/{id}` | Get call with transcript |
-| POST | `/webhooks/retell` | Retell webhook |
-| POST | `/seed/agent-configs` | Seed default configs |
+| GET | `/api/v1/agent-configs` | List all agent configs |
+| POST | `/api/v1/agent-configs` | Create agent config |
+| GET | `/api/v1/agent-configs/{id}` | Get single config |
+| PUT | `/api/v1/agent-configs/{id}` | Update config |
+| DELETE | `/api/v1/agent-configs/{id}` | Delete config |
+| POST | `/api/v1/start-call` | Initiate a web call |
+| GET | `/api/v1/calls` | List all calls |
+| GET | `/api/v1/calls/{id}` | Get call with transcript |
+| POST | `/webhooks/retell` | Retell webhook (no prefix) |
+| POST | `/api/v1/seed/agent-configs` | Seed default configs |
 
 ## 🎨 Design Choices
 

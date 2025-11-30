@@ -1,18 +1,16 @@
-/* eslint-disable */
-// @ts-nocheck
-
-import { useState, useEffect } from "react";
+// src/pages/Configure.tsx
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-
 import {
   createAgentConfig,
   updateAgentConfig,
   getAgentConfig,
 } from "../api/agentConfig";
+import type { AgentConfigDetails } from "../types";
 
 export default function Configure() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
   const navigate = useNavigate();
 
@@ -66,7 +64,7 @@ Start every call with a friendly introduction, collect status updates, and if an
   //               LOAD CONFIG IN EDIT MODE
   // =======================================================
   useEffect(() => {
-    if (!isEdit) return;
+    if (!isEdit || !id) return;
 
     async function load() {
       setLoading(true);
@@ -75,31 +73,31 @@ Start every call with a friendly introduction, collect status updates, and if an
         const data = res.data;
 
         setAgentName(data.name);
-        setAgentDescription(data.description);
+        setAgentDescription(data.description || "");
 
-        const c = data.config;
+        const c = data.config as AgentConfigDetails;
 
-        setPrompt(c.prompt);
-        setVoiceModel(c.voice.model);
-        setSpeakingRate(c.voice.speakingRate);
-        setTone(c.voice.tone);
-        setFillerWords(c.voice.fillerWords);
-        setBackchanneling(c.voice.backchanneling);
+        setPrompt(c.prompt || "");
+        setVoiceModel(c.voice?.model || "retell-voice-en-US-1");
+        setSpeakingRate(c.voice?.speakingRate || "normal");
+        setTone(c.voice?.tone || "professional");
+        setFillerWords(c.voice?.fillerWords || "medium");
+        setBackchanneling(c.voice?.backchanneling ?? true);
 
-        setInterruptionSensitivity(c.behavior.interruptionSensitivity);
-        setSilenceThreshold(c.behavior.silenceThreshold);
-        setInterruptibility(c.behavior.interruptibility);
+        setInterruptionSensitivity(c.behavior?.interruptionSensitivity || 70);
+        setSilenceThreshold(c.behavior?.silenceThreshold || 900);
+        setInterruptibility(c.behavior?.interruptibility || "always");
 
-        setEmergencyEnabled(c.emergency.enabled);
-        setEmergencyTriggers(c.emergency.triggers);
+        setEmergencyEnabled(c.emergency?.enabled ?? true);
+        setEmergencyTriggers(c.emergency?.triggers || []);
 
-        setMaxRetries(c.edgeCases.maxRetries);
-        setConfidenceThreshold(c.edgeCases.confidenceThreshold);
-        setConflictStrategy(c.edgeCases.conflictStrategy);
+        setMaxRetries(c.edgeCases?.maxRetries || 3);
+        setConfidenceThreshold(c.edgeCases?.confidenceThreshold || 0.55);
+        setConflictStrategy(c.edgeCases?.conflictStrategy || "ask");
 
-        setExtractionRules(c.extraction);
+        setExtractionRules(c.extraction || "");
 
-      } catch (error) {
+      } catch {
         toast.error("Failed to load config");
       }
       setLoading(false);
@@ -146,7 +144,7 @@ Start every call with a friendly introduction, collect status updates, and if an
     };
 
     try {
-      if (isEdit) {
+      if (isEdit && id) {
         await updateAgentConfig(id, payload);
         toast.success("Configuration updated successfully!");
       } else {
@@ -155,7 +153,7 @@ Start every call with a friendly introduction, collect status updates, and if an
       }
 
       navigate("/agent-configs");
-    } catch (err) {
+    } catch {
       toast.error("Failed to save configuration.");
     }
 

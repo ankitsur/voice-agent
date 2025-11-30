@@ -1,18 +1,17 @@
-/* eslint-disable */
-// @ts-nocheck
-
-import { useEffect, useState, useRef } from "react";
+// src/pages/TestCall.tsx
+import { useEffect, useState, useRef, useCallback } from "react";
 import { listAgentConfigs } from "../api/agentConfig";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { RetellWebClient } from "retell-client-js-sdk";
 import { startCall } from "../api/testCall";
+import type { AgentConfig } from "../types";
 
 export default function TestCall() {
   const navigate = useNavigate();
 
   // Agent configs
-  const [configs, setConfigs] = useState([]);
+  const [configs, setConfigs] = useState<AgentConfig[]>([]);
   const [loadingConfigs, setLoadingConfigs] = useState(true);
   const [selectedConfig, setSelectedConfig] = useState("");
 
@@ -35,7 +34,7 @@ export default function TestCall() {
       try {
         const res = await listAgentConfigs();
         setConfigs(res.data);
-      } catch (error) {
+      } catch {
         toast.error("Failed to load agent configs.");
       }
       setLoadingConfigs(false);
@@ -119,7 +118,7 @@ export default function TestCall() {
         console.log("Agent stopped talking");
       });
 
-      client.on("error", (error) => {
+      client.on("error", (error: Error) => {
         console.error("Call error:", error);
         toast.error(`Call error: ${error.message || "Unknown error"}`);
         setIsInCall(false);
@@ -138,8 +137,8 @@ export default function TestCall() {
 
       toast.success("Connecting to call...");
 
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      console.error("Failed to start call:", err);
       toast.error("Failed to start call. Check console for details.");
       setIsCalling(false);
       setIsInCall(false);

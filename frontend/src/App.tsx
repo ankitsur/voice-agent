@@ -1,14 +1,12 @@
-
-
+// src/App.tsx
+import { Routes, Route } from "react-router-dom";
 import Sidebar from "./components/Sidebar";
 import TopBar from "./components/TopBar";
 import ToastContainer from "./components/ToastContainer";
-import { Routes, Route } from "react-router-dom";
-
 import Home from "./pages/Home";
 import AgentConfigList from "./pages/AgentConfigList";
 import Configure from "./pages/Configure";
-import StartCall from "./pages/TestCall";
+import TestCall from "./pages/TestCall";
 import CallResults from "./pages/CallResults";
 import CallDetail from "./pages/CallDetail";
 
@@ -24,9 +22,9 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/home" element={<Home />} />
           <Route path="/agent-configs" element={<AgentConfigList />} />
-          <Route path="/test-call" element={<StartCall />} />
           <Route path="/agent-configs/new" element={<Configure />} />
           <Route path="/agent-configs/:id" element={<Configure />} />
+          <Route path="/test-call" element={<TestCall />} />
           <Route path="/call-results" element={<CallResults />} />
           <Route path="/call-results/:id" element={<CallDetail />} />
         </Routes>
@@ -34,7 +32,3 @@ export default function App() {
     </>
   );
 }
-
-
-
-

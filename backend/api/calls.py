@@ -3,7 +3,7 @@
 from fastapi import APIRouter, HTTPException
 from supabase_client import supabase
 
-router = APIRouter()
+router = APIRouter(prefix="/api/v1", tags=["Calls"])
 
 
 @router.get("/calls")

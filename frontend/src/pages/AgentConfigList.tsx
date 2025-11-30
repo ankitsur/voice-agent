@@ -1,40 +1,49 @@
-/* eslint-disable */
-
-import { useEffect, useState } from "react";
+// src/pages/AgentConfigList.tsx
+import { useEffect, useState, useCallback } from "react";
 import Table from "../components/Table";
 import toast from "react-hot-toast";
-import {
-  listAgentConfigs,
-  bulkDeleteAgentConfigs,
-} from "../api/agentConfig";
+import { listAgentConfigs, bulkDeleteAgentConfigs } from "../api/agentConfig";
 import { useNavigate } from "react-router-dom";
+import type { AgentConfig } from "../types";
 
 export default function AgentConfigList() {
-  const [configs, setConfigs] = useState<any[]>([]);
+  const [configs, setConfigs] = useState<AgentConfig[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  function toggle(id: string) {
+  const toggle = useCallback((id: string) => {
     setSelected((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
-  }
+  }, []);
 
-  async function load() {
-    const res = await listAgentConfigs();
-    setConfigs(res.data);
-  }
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await listAgentConfigs();
+      setConfigs(res.data || []);
+    } catch (error) {
+      toast.error("Failed to load configurations");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  async function deleteSelected() {
-    await bulkDeleteAgentConfigs(selected);
-    toast.success("Deleted successfully!");
-    setSelected([]);
-    load();
-  }
+  const deleteSelected = useCallback(async () => {
+    try {
+      await bulkDeleteAgentConfigs(selected);
+      toast.success("Deleted successfully!");
+      setSelected([]);
+      load();
+    } catch (error) {
+      toast.error("Failed to delete configurations");
+    }
+  }, [selected, load]);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
 
   return (
     <div className="p-10 mt-16 ml-64">
@@ -45,7 +54,7 @@ export default function AgentConfigList() {
 
         <button
           onClick={() => navigate("/agent-configs/new")}
-          className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+          className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
         >
           + Create New Configuration
         </button>
@@ -59,7 +68,7 @@ export default function AgentConfigList() {
 
           <button
             onClick={deleteSelected}
-            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md"
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
           >
             Delete
           </button>
@@ -68,14 +77,14 @@ export default function AgentConfigList() {
             <>
               <button
                 onClick={() => navigate(`/agent-configs/${selected[0]}`)}
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md"
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors"
               >
                 Edit
               </button>
 
               <button
                 onClick={() => navigate(`/agent-configs/${selected[0]}`)}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md"
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-colors"
               >
                 View
               </button>
@@ -85,7 +94,11 @@ export default function AgentConfigList() {
       )}
 
       <div className="mt-6">
-        <Table data={configs} selected={selected} toggle={toggle} />
+        {loading ? (
+          <p className="text-gray-600 dark:text-slate-400">Loading...</p>
+        ) : (
+          <Table data={configs} selected={selected} toggle={toggle} />
+        )}
       </div>
     </div>
   );

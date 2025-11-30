@@ -8,25 +8,16 @@ import os
 from datetime import datetime
 from dotenv import load_dotenv
 
-# ------------------------------------------------------------------
 # Load environment variables
-# ------------------------------------------------------------------
 load_dotenv()
 
-router = APIRouter()
+router = APIRouter(prefix="/api/v1", tags=["Calls"])
 
-# ------------------------------------------------------------------
-# Read environment variables
-# ------------------------------------------------------------------
+# Environment variables
 RETELL_API_KEY = os.getenv("RETELL_API_KEY")
 RETELL_AGENT_ID = os.getenv("RETELL_AGENT_ID")
-RETELL_API_URL = os.getenv(
-    "RETELL_API_URL",
-    "https://api.retellai.com/v2/create-web-call"   # fallback correct URL
-)
+RETELL_API_URL = os.getenv("RETELL_API_URL", "https://api.retellai.com/v2/create-web-call")
 RETELL_WEBHOOK_URL = os.getenv("RETELL_WEBHOOK_URL")
-
-print("🔧 START_CALL LOADED → Retell URL:", RETELL_API_URL)
 
 
 # ------------------------------------------------------------------
@@ -44,8 +35,7 @@ class StartCallInput(BaseModel):
 # ------------------------------------------------------------------
 @router.post("/start-call")
 async def start_call(body: StartCallInput):
-
-    print("▶️ /start-call triggered → Using Retell URL:", RETELL_API_URL)
+    """Initiate a new web call via Retell AI."""
 
     # --------------------------------------------------------------
     # 1. Insert call record in Supabase (status = queued)
@@ -66,7 +56,6 @@ async def start_call(body: StartCallInput):
         raise HTTPException(status_code=500, detail="❌ Failed to insert call into database")
 
     call_id = inserted.data[0]["id"]
-    print("🟢 Call inserted into DB → call_id:", call_id)
 
     # --------------------------------------------------------------
     # 2. Prepare Retell V2 Web-Call payload
@@ -115,7 +104,6 @@ async def start_call(body: StartCallInput):
         )
 
     retell_data = response.json()
-    print("🟢 Retell created Web Call:", retell_data)
 
     retell_call_id = retell_data.get("call_id")
     access_token = retell_data.get("access_token")
@@ -129,8 +117,6 @@ async def start_call(body: StartCallInput):
         "retell_call_id": retell_call_id,
         "started_at": datetime.utcnow().isoformat()
     }).eq("id", call_id).execute()
-
-    print(f"🟢 DB updated → retell_call_id={retell_call_id}")
 
     # --------------------------------------------------------------
     # 5. Return details to UI

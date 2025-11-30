@@ -1,11 +1,15 @@
 # backend/api/webhook.py
 
+import logging
 from fastapi import APIRouter, Request, HTTPException
 from datetime import datetime
 from supabase_client import supabase
 from services.postprocess import run_post_processing_from_event
 
-router = APIRouter()
+logger = logging.getLogger(__name__)
+
+# Webhook routes don't use /api/v1 prefix - Retell sends to specific URL
+router = APIRouter(tags=["Webhooks"])
 
 
 @router.post("/webhooks/retell")
@@ -19,33 +23,22 @@ async def retell_webhook(request: Request):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid JSON: {str(e)}")
 
-    print("📥 Webhook received from Retell:")
-    print(payload)
-
-    # Extract event type
     event_type = payload.get("event")
     
-    # We care about "call_ended" events
+    # Only process "call_ended" events
     if event_type != "call_ended":
-        print(f"ℹ️ Ignoring event type: {event_type}")
         return {"status": "ignored", "event": event_type}
 
     # Extract call data
     call_data = payload.get("call", {})
     retell_call_id = call_data.get("call_id")
-    
-    # Get transcript (can be in different formats)
     transcript = call_data.get("transcript", "")
     transcript_object = call_data.get("transcript_object", [])
-    
-    # Get analysis if Retell provides it
     call_analysis = call_data.get("call_analysis", {})
     
-    # Get metadata we sent when creating the call
+    # Get our call ID from metadata
     metadata = call_data.get("metadata", {})
     our_call_id = metadata.get("call_id")
-    
-    print(f"📞 Call ended: retell_call_id={retell_call_id}, our_call_id={our_call_id}")
 
     if not our_call_id:
         # Try to find call by retell_call_id
@@ -53,7 +46,7 @@ async def retell_webhook(request: Request):
         if result.data:
             our_call_id = result.data[0]["id"]
         else:
-            print("⚠️ Could not find matching call in database")
+            logger.warning(f"Call not found for retell_call_id: {retell_call_id}")
             return {"status": "error", "message": "Call not found in database"}
 
     # Run post-processing to extract structured data
@@ -62,8 +55,6 @@ async def retell_webhook(request: Request):
         analysis_obj=call_analysis,
         raw_transcript=transcript
     )
-
-    print(f"📊 Extracted structured data: {structured_data}")
 
     # Update call record with completion status
     supabase.table("calls").update({
@@ -76,8 +67,6 @@ async def retell_webhook(request: Request):
             "structured_data": structured_data
         }
     }).eq("id", our_call_id).execute()
-
-    print(f"✅ Call {our_call_id} updated with transcript and structured data")
 
     return {
         "status": "success",

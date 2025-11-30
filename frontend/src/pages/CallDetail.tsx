@@ -2,12 +2,13 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { getCall, CallData } from "../api/calls";
+import { getCall } from "../api/calls";
+import type { Call, CallStatus } from "../types";
 
 export default function CallDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [call, setCall] = useState<CallData | null>(null);
+  const [call, setCall] = useState<Call | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,8 +26,8 @@ export default function CallDetail() {
     load();
   }, [id]);
 
-  const getStatusBadge = (status: string) => {
-    const styles: Record<string, string> = {
+  const getStatusBadge = (status: CallStatus) => {
+    const styles: Record<CallStatus, string> = {
       completed: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
       in_progress: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
       queued: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
